@@ -1,0 +1,132 @@
+<div class="page-container">
+  <div class="register-card">
+    <div class="brand">
+      <div class="brand-icon">S</div>
+      <h1>StudyTrack</h1>
+    </div>
+
+    <div class="welcome-section">
+      <p class="eyebrow">START LEARNING</p>
+      <h2>Create your account</h2>
+      <p class="subtitle">Join as a learner to track study goals and unlock topics.</p>
+    </div>
+
+    <form (ngSubmit)="onRegister()" #registerForm="ngForm">
+      <div class="form-group">
+        <label for="name">Full Name</label>
+        <input
+          id="name"
+          type="text"
+          name="name"
+          [(ngModel)]="name"
+          placeholder="e.g. John Doe"
+          required
+          maxlength="100"
+          #nameField="ngModel"
+        />
+        @if (nameField.invalid && nameField.touched) {
+          <span class="field-error">Full name is required.</span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email address</label>
+        <input
+          id="email"
+          type="email"
+          name="email"
+          [(ngModel)]="email"
+          placeholder="name@example.com"
+          required
+          email
+          #emailField="ngModel"
+        />
+        @if (emailField.invalid && emailField.touched) {
+          <span class="field-error">Please enter a valid email address.</span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <div class="password-wrapper">
+          <input
+            id="password"
+            [type]="showPassword ? 'text' : 'password'"
+            name="password"
+            [(ngModel)]="password"
+            placeholder="At least 8 characters"
+            required
+            minlength="8"
+            maxlength="72"
+            #passwordField="ngModel"
+          />
+          <button
+            type="button"
+            class="toggle-pwd-btn"
+            (click)="togglePasswordVisibility()"
+            title="Toggle password visibility"
+          >
+            {{ showPassword ? 'Hide' : 'Show' }}
+          </button>
+        </div>
+        @if (passwordField.invalid && passwordField.touched) {
+          <span class="field-error">Password must be at least 8 characters.</span>
+        } @else {
+          <span class="field-hint">Minimum 8 characters (max 72).</span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="confirmPassword">Confirm Password</label>
+        <div class="password-wrapper">
+          <input
+            id="confirmPassword"
+            [type]="showConfirmPassword ? 'text' : 'password'"
+            name="confirmPassword"
+            [(ngModel)]="confirmPassword"
+            placeholder="Re-enter your password"
+            required
+            #confirmPasswordField="ngModel"
+          />
+          <button
+            type="button"
+            class="toggle-pwd-btn"
+            (click)="toggleConfirmPasswordVisibility()"
+            title="Toggle confirm password visibility"
+          >
+            {{ showConfirmPassword ? 'Hide' : 'Show' }}
+          </button>
+        </div>
+        @if (confirmPassword && password !== confirmPassword) {
+          <span class="field-error">Passwords do not match.</span>
+        }
+      </div>
+
+      @if (errorMessage) {
+        <p class="error-message">{{ errorMessage }}</p>
+      }
+
+      @if (successMessage) {
+        <p class="success-message">{{ successMessage }}</p>
+      }
+
+      <button
+        type="submit"
+        class="submit-btn"
+        [disabled]="registerForm.invalid || (password !== confirmPassword) || isLoading"
+      >
+        {{ isLoading ? 'Creating account...' : 'Create Account' }}
+      </button>
+    </form>
+
+    <div class="switch-link">
+      <span>Already have an account?</span>
+      <a routerLink="/login">Sign in here</a>
+    </div>
+
+    <p class="footer-text">
+      Build better habits. Track your progress. Achieve your goals.
+    </p>
+  </div>
+</div>
+

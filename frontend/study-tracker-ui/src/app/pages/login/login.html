@@ -1,0 +1,80 @@
+<div class="page-container">
+  <div class="login-card">
+    <div class="brand">
+      <div class="brand-icon">S</div>
+      <h1>StudyTrack</h1>
+    </div>
+
+    <div class="welcome-section">
+      <p class="eyebrow">YOUR LEARNING JOURNEY</p>
+      <h2>Welcome back!</h2>
+      <p class="subtitle">Sign in to continue tracking your learning progress.</p>
+    </div>
+
+    <form (ngSubmit)="onLogin()" #loginForm="ngForm">
+      <div class="form-group">
+        <label for="email">Email address</label>
+        <input
+          id="email"
+          type="email"
+          name="email"
+          [(ngModel)]="email"
+          placeholder="name@example.com"
+          required
+          email
+          #emailField="ngModel"
+        />
+        @if (emailField.invalid && emailField.touched) {
+          <span class="field-error">Please enter a valid email address.</span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <div class="password-wrapper">
+          <input
+            id="password"
+            [type]="showPassword ? 'text' : 'password'"
+            name="password"
+            [(ngModel)]="password"
+            placeholder="Enter your password"
+            required
+            #passwordField="ngModel"
+          />
+          <button
+            type="button"
+            class="toggle-pwd-btn"
+            (click)="togglePasswordVisibility()"
+            title="Toggle password visibility"
+          >
+            {{ showPassword ? 'Hide' : 'Show' }}
+          </button>
+        </div>
+        @if (passwordField.invalid && passwordField.touched) {
+          <span class="field-error">Password is required.</span>
+        }
+      </div>
+
+      @if (errorMessage) {
+        <p class="error-message">{{ errorMessage }}</p>
+      }
+
+      <button
+        type="submit"
+        class="submit-btn"
+        [disabled]="loginForm.invalid || isLoading"
+      >
+        {{ isLoading ? 'Signing in...' : 'Sign in' }}
+      </button>
+    </form>
+
+    <div class="switch-link">
+      <span>Don't have an account?</span>
+      <a routerLink="/register">Create an account</a>
+    </div>
+
+    <p class="footer-text">
+      Build better habits. Track your progress. Achieve your goals.
+    </p>
+  </div>
+</div>

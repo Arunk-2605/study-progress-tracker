@@ -1,0 +1,155 @@
+<div class="mentor-page">
+  <!-- Topbar Navigation -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-icon">S</div>
+      <div>
+        <h2>StudyTrack</h2>
+        <span class="role-badge">MENTOR CONSOLE</span>
+      </div>
+    </div>
+
+    <nav class="nav-links">
+      <a routerLink="/mentor" class="nav-link">Learners & Goals</a>
+      <a routerLink="/mentor/config" class="nav-link active">System Configuration</a>
+    </nav>
+
+    <div class="user-section">
+      <div class="user-info">
+        <span class="user-name">{{ currentUser?.name || 'Mentor' }}</span>
+        <span class="mentor-tag">MENTOR</span>
+      </div>
+      <button class="logout-btn" (click)="logout()">Sign out</button>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="config-wrapper">
+      <div class="config-header">
+        <p class="eyebrow">APPLICATION PARAMETERS</p>
+        <h1>Global Study System Configuration</h1>
+        <p class="subtitle">
+          Configure session limits and maximum topic dependencies enforced across all learner accounts.
+        </p>
+      </div>
+
+      @if (isLoading) {
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <p>Loading application configuration...</p>
+        </div>
+      } @else {
+        <div class="config-card">
+          @if (errorMessage) {
+            <div class="error-banner">
+              <p>{{ errorMessage }}</p>
+            </div>
+          }
+
+          @if (successMessage) {
+            <div class="success-banner">
+              <p>✅ {{ successMessage }}</p>
+            </div>
+          }
+
+          <form (ngSubmit)="saveConfig()">
+            <!-- Current Active Limits Summary -->
+            <div class="active-limits-bar">
+              <div class="limit-box">
+                <span class="limit-label">Active Min Session</span>
+                <span class="limit-val">{{ config.minSessionMinutes }} mins</span>
+              </div>
+              <div class="limit-box">
+                <span class="limit-label">Active Max Session</span>
+                <span class="limit-val">{{ config.maxSessionMinutes }} mins</span>
+              </div>
+              <div class="limit-box">
+                <span class="limit-label">Active Max Prerequisites</span>
+                <span class="limit-val">{{ config.maxPrerequisites }} per topic</span>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <h3>Study Session Duration Limits</h3>
+              <p class="form-section-desc">
+                Enforces the minimum and maximum number of minutes learners can log per study session.
+              </p>
+
+              <div class="form-row">
+                <div class="form-group flex-1">
+                  <label for="minSession">Minimum Study Minutes *</label>
+                  <input
+                    id="minSession"
+                    type="number"
+                    [(ngModel)]="minSession"
+                    name="minSessionMinutes"
+                    min="1"
+                    max="1440"
+                    required
+                  />
+                  <small class="field-hint">Permitted range: 1 to 1440 minutes (Default: 5)</small>
+                </div>
+
+                <div class="form-group flex-1">
+                  <label for="maxSession">Maximum Study Minutes *</label>
+                  <input
+                    id="maxSession"
+                    type="number"
+                    [(ngModel)]="maxSession"
+                    name="maxSessionMinutes"
+                    min="1"
+                    max="1440"
+                    required
+                  />
+                  <small class="field-hint">Permitted range: 1 to 1440 minutes (Default: 480 / 8 hrs)</small>
+                </div>
+              </div>
+            </div>
+
+            <hr class="section-divider" />
+
+            <div class="form-section">
+              <h3>Topic Prerequisite Limits</h3>
+              <p class="form-section-desc">
+                Limits the maximum number of prerequisite dependencies that can be linked to any single topic.
+              </p>
+
+              <div class="form-group max-width-320">
+                <label for="maxPrereqs">Max Prerequisites per Topic *</label>
+                <input
+                  id="maxPrereqs"
+                  type="number"
+                  [(ngModel)]="maxPrereqs"
+                  name="maxPrerequisites"
+                  min="0"
+                  max="20"
+                  required
+                />
+                <small class="field-hint">Permitted range: 0 to 20 prerequisites (Default: 5)</small>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button
+                type="button"
+                class="secondary-btn"
+                (click)="resetToDefaults()"
+                [disabled]="isSaving"
+              >
+                Reset to Recommended Defaults
+              </button>
+              <button
+                type="submit"
+                class="primary-btn"
+                [disabled]="isSaving"
+              >
+                {{ isSaving ? 'Saving Changes...' : 'Save Configuration' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      }
+    </div>
+  </main>
+</div>
+

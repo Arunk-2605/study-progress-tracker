@@ -1,0 +1,219 @@
+<div class="dashboard">
+  <!-- Top Navigation Bar -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-icon">S</div>
+      <div>
+        <h2>StudyTrack</h2>
+        <span class="brand-subtitle">Progress Tracker</span>
+      </div>
+    </div>
+
+    <div class="user-section">
+      <div class="user-info">
+        <span class="user-name">{{ currentUser?.name || 'Learner' }}</span>
+        <span class="user-role-badge">{{ currentUser?.role || 'LEARNER' }}</span>
+      </div>
+      <button class="logout-btn" (click)="logout()">Sign out</button>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <!-- Welcome Header -->
+    <section class="welcome">
+      <p class="eyebrow">YOUR LEARNING DASHBOARD</p>
+      <h1>Welcome back, {{ currentUser?.name || 'Learner' }}!</h1>
+      <p class="welcome-desc">
+        Track your learning path, master prerequisites, and log your study sessions.
+      </p>
+    </section>
+
+    <!-- Comprehensive Statistics Grid -->
+    <section class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon-wrapper goals-icon">🎯</div>
+        <div class="stat-info">
+          <p>Total Goals</p>
+          <h2>{{ totalGoals }}</h2>
+          <small class="stat-subtext">Active learning tracks</small>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon-wrapper topics-icon">📚</div>
+        <div class="stat-info">
+          <p>Topics Completed</p>
+          <h2>{{ completedTopics }} <span class="stat-denom">/ {{ totalTopics }}</span></h2>
+          <small class="stat-subtext">{{ remainingTopics }} remaining to master</small>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon-wrapper time-icon">⏱️</div>
+        <div class="stat-info">
+          <p>Study Time</p>
+          <h2>{{ formatStudyTime(totalMinutes) }}</h2>
+          <small class="stat-subtext">{{ totalMinutes }} total minutes logged</small>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon-wrapper progress-icon">📈</div>
+        <div class="stat-info">
+          <p>Overall Progress</p>
+          <h2>{{ progressPercentage }}%</h2>
+          <div class="mini-progress-track">
+            <div class="mini-progress-fill" [style.width.%]="progressPercentage"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Learning Goals Management Section -->
+    <section class="goals-section">
+      <div class="section-heading">
+        <div>
+          <h2>My Learning Goals</h2>
+          <p>Click on any goal to manage topics, prerequisites, and log study sessions.</p>
+        </div>
+
+        <div class="heading-actions">
+          <button class="secondary-btn" (click)="loadGoals()" [disabled]="isLoading">
+            🔄 Refresh
+          </button>
+          <button class="primary-btn" (click)="openCreateGoalModal()">
+            + New Goal
+          </button>
+        </div>
+      </div>
+
+      @if (isLoading) {
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <p>Loading your goals and progress...</p>
+        </div>
+      } @else if (errorMessage) {
+        <div class="error-banner">
+          <p>{{ errorMessage }}</p>
+          <button class="retry-btn" (click)="loadGoals()">Try Again</button>
+        </div>
+      } @else if (goals.length === 0) {
+        <div class="empty-state">
+          <div class="empty-icon">🎯</div>
+          <h3>No goals created yet</h3>
+          <p>Define your first learning goal to start mapping out topics and tracking progress.</p>
+          <button class="primary-btn" (click)="openCreateGoalModal()">
+            Create Your First Goal
+          </button>
+        </div>
+      } @else {
+        <div class="goal-grid">
+          @for (goal of goals; track goal.id) {
+            <div class="goal-card">
+              <div class="goal-header">
+                <h3>{{ goal.title }}</h3>
+                <span class="topic-count-badge">
+                  {{ goal.progress ? goal.progress.totalTopics : (goal.topics?.length || 0) }} topics
+                </span>
+              </div>
+
+              <p class="goal-desc">
+                {{ goal.description || 'No description provided.' }}
+              </p>
+
+              @if (goal.progress) {
+                <div class="goal-progress">
+                  <div class="progress-heading">
+                    <span>Progress</span>
+                    <strong>{{ goal.progress.progressPercentage }}%</strong>
+                  </div>
+
+                  <div class="progress-track">
+                    <div
+                      class="progress-fill"
+                      [style.width.%]="goal.progress.progressPercentage"
+                    ></div>
+                  </div>
+
+                  <div class="progress-metrics">
+                    <span>
+                      ✅ {{ goal.progress.completedTopics }} of {{ goal.progress.totalTopics }} completed
+                    </span>
+                    <span>
+                      ⏱️ {{ formatStudyTime(goal.progress.totalStudyMinutes) }}
+                    </span>
+                  </div>
+                </div>
+              }
+
+              <button class="view-goal-btn" (click)="viewGoal(goal.id)">
+                View Topics & Sessions →
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </section>
+  </main>
+
+  <!-- Create Goal Modal -->
+  @if (showCreateModal) {
+    <div class="modal-backdrop" (click)="closeCreateGoalModal()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Create New Learning Goal</h3>
+          <button class="close-btn" (click)="closeCreateGoalModal()">✕</button>
+        </div>
+
+        <form (ngSubmit)="submitCreateGoal()">
+          <div class="form-group">
+            <label for="goalTitle">Goal Title *</label>
+            <input
+              id="goalTitle"
+              type="text"
+              name="title"
+              [(ngModel)]="newGoalTitle"
+              placeholder="e.g. Master Full-Stack Angular & NestJS"
+              required
+              maxlength="100"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="goalDesc">Description (Optional)</label>
+            <textarea
+              id="goalDesc"
+              name="description"
+              [(ngModel)]="newGoalDescription"
+              placeholder="Outline what you want to achieve in this learning track..."
+              rows="3"
+              maxlength="500"
+            ></textarea>
+          </div>
+
+          @if (createGoalError) {
+            <p class="modal-error">{{ createGoalError }}</p>
+          }
+
+          <div class="modal-actions">
+            <button
+              type="button"
+              class="secondary-btn"
+              (click)="closeCreateGoalModal()"
+              [disabled]="isCreatingGoal"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="primary-btn"
+              [disabled]="!newGoalTitle.trim() || isCreatingGoal"
+            >
+              {{ isCreatingGoal ? 'Creating...' : 'Create Goal' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>

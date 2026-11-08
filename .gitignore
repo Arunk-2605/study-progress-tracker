@@ -1,0 +1,63 @@
+# Root .gitignore – applies to both backend and frontend
+# ------------------------------------------------------
+# Node modules (both projects)
+**/node_modules/
+
+# Build outputs
+**/dist/
+**/out-tsc/
+**/build/
+**/generated/
+
+# Angular specific
+frontend/study-tracker-ui/.angular/cache/
+frontend/study-tracker-ui/coverage/
+frontend/study-tracker-ui/.ngcache/
+
+# Backend (NestJS) build output
+backend/study-tracker-api/dist/
+backend/study-tracker-api/build/
+
+# Prisma generated client (already ignored by backend .gitignore but added here for safety)
+backend/study-tracker-api/src/generated/
+
+# Environment / secret files
+**/.env
+**/.env.*
+**/.env.local
+**/.env.development
+**/.env.test
+**/.env.production
+
+# Playwright test reports & test result artifacts
+playwright-report/
+test-results/
+**/playwright-report/
+**/test-results/
+
+# Coverage reports (Jest/Vitest)
+coverage/
+**/coverage/
+
+# IDE/editor temporary files & logs
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.sublime-workspace
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+
+# AI coding tool metadata
+**/.agents/
+**/.claude/
+**/.windsurf/

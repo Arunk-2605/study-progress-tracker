@@ -1,0 +1,378 @@
+<div class="goal-details-page">
+  <!-- Top Navigation Bar -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-icon">S</div>
+      <h2>StudyTrack</h2>
+    </div>
+
+    <div class="header-nav">
+      <a [routerLink]="getDashboardLink()" class="back-link">
+        ← Back to {{ isLearner ? 'Dashboard' : 'Learners Overview' }}
+      </a>
+      @if (!isLearner) {
+        <span class="read-only-badge">👁️ Read-Only Mentor Mode</span>
+      }
+    </div>
+  </header>
+
+  <main class="main-content">
+    @if (isLoading) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Loading goal topics and progress...</p>
+      </div>
+    } @else if (errorMessage) {
+      <div class="error-banner">
+        <p>{{ errorMessage }}</p>
+        <button class="retry-btn" (click)="loadAllGoalData()">Retry</button>
+      </div>
+    } @else {
+      <!-- Goal Overview Header -->
+      <section class="goal-overview-card">
+        <div class="goal-meta">
+          <span class="eyebrow">LEARNING GOAL</span>
+          <h1>{{ goal?.title }}</h1>
+          <p class="goal-desc">
+            {{ goal?.description || 'No description provided for this learning goal.' }}
+          </p>
+        </div>
+
+        @if (progress) {
+          <div class="progress-hero">
+            <div class="hero-stats">
+              <div class="hero-stat-item">
+                <span class="hero-label">Progress</span>
+                <span class="hero-value">{{ progress.progressPercentage }}%</span>
+              </div>
+              <div class="hero-stat-item">
+                <span class="hero-label">Topics Completed</span>
+                <span class="hero-value">{{ progress.completedTopics }} / {{ progress.totalTopics }}</span>
+              </div>
+              <div class="hero-stat-item">
+                <span class="hero-label">Remaining</span>
+                <span class="hero-value">{{ progress.remainingTopics }}</span>
+              </div>
+              <div class="hero-stat-item">
+                <span class="hero-label">Total Study Time</span>
+                <span class="hero-value">{{ formatStudyTime(progress.totalStudyMinutes) }}</span>
+              </div>
+            </div>
+
+            <div class="hero-progress-track">
+              <div
+                class="hero-progress-fill"
+                [style.width.%]="progress.progressPercentage"
+              ></div>
+            </div>
+          </div>
+        }
+      </section>
+
+      <!-- Two-Column Layout: Topics & Prerequisites (Left), Study Sessions (Right) -->
+      <div class="details-grid">
+        <!-- Left: Topics & Prerequisites -->
+        <section class="topics-section">
+          <div class="section-header">
+            <div>
+              <h2>Topics & Prerequisites</h2>
+              <p>Topics with unmet prerequisites are locked until dependencies are completed.</p>
+            </div>
+          </div>
+
+          <!-- Add Topic (Learner only) -->
+          @if (isLearner) {
+            <div class="add-topic-card">
+              <form (ngSubmit)="createTopic()" class="inline-form">
+                <input
+                  type="text"
+                  [(ngModel)]="newTopicTitle"
+                  name="topicTitle"
+                  placeholder="Add a new topic (e.g. Asynchronous TypeScript)..."
+                  maxlength="100"
+                  required
+                />
+                <button
+                  type="submit"
+                  class="primary-btn"
+                  [disabled]="!newTopicTitle.trim() || isCreatingTopic"
+                >
+                  {{ isCreatingTopic ? 'Adding...' : '+ Add Topic' }}
+                </button>
+              </form>
+              @if (topicError) {
+                <span class="field-error">{{ topicError }}</span>
+              }
+            </div>
+          }
+
+          <!-- Topics List -->
+          @if (topics.length === 0) {
+            <div class="empty-box">
+              <p>No topics added yet. Add topics to build your learning path!</p>
+            </div>
+          } @else {
+            <div class="topics-list">
+              @for (topic of topics; track topic.id) {
+                <div class="topic-item" [class.completed]="topic.completed" [class.locked]="topic.locked && !topic.completed">
+                  <div class="topic-status-col">
+                    @if (isLearner) {
+                      <button
+                        type="button"
+                        class="status-toggle-btn"
+                        [class.checked]="topic.completed"
+                        [disabled]="topic.locked && !topic.completed"
+                        (click)="toggleTopicStatus(topic)"
+                        [title]="topic.locked && !topic.completed ? 'Topic is locked by prerequisites' : (topic.completed ? 'Click to reopen' : 'Click to complete')"
+                      >
+                        {{ topic.completed ? '✓' : '' }}
+                      </button>
+                    } @else {
+                      <span class="read-only-check">
+                        {{ topic.completed ? '✅' : (topic.locked ? '🔒' : '⏳') }}
+                      </span>
+                    }
+                  </div>
+
+                  <div class="topic-content-col">
+                    <div class="topic-title-row">
+                      <h4 [class.strike]="topic.completed">{{ topic.title }}</h4>
+
+                      <div class="badges-row">
+                        @if (topic.completed) {
+                          <span class="badge badge-success">Completed</span>
+                        } @else if (topic.locked) {
+                          <span class="badge badge-locked">🔒 Locked</span>
+                        } @else {
+                          <span class="badge badge-ready">Ready to Study</span>
+                        }
+                      </div>
+                    </div>
+
+                    <!-- Locked Notice -->
+                    @if (topic.locked && !topic.completed) {
+                      <div class="missing-prereqs-notice">
+                        <strong>Missing Prerequisites:</strong>
+                        @for (m of topic.missingPrerequisites; track m.id) {
+                          <span class="missing-tag">{{ m.title }}</span>
+                        }
+                      </div>
+                    }
+
+                    <!-- Prerequisites List -->
+                    <div class="prereq-summary">
+                      @if (topic.prerequisites && topic.prerequisites.length > 0) {
+                        <span class="prereq-label">Prerequisites:</span>
+                        <div class="prereq-tags">
+                          @for (p of topic.prerequisites; track p.id) {
+                            <span class="prereq-tag" [class.done]="p.completed">
+                              {{ p.completed ? '✓' : '○' }} {{ p.title }}
+                            </span>
+                          }
+                        </div>
+                      } @else {
+                        <span class="no-prereqs-text">No prerequisites assigned</span>
+                      }
+
+                      @if (isLearner && !topic.completed) {
+                        <button
+                          type="button"
+                          class="link-action-btn"
+                          (click)="openAddPrereqModal(topic)"
+                        >
+                          + Link Prerequisite
+                        </button>
+                      }
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </section>
+
+        <!-- Right: Study Sessions -->
+        <section class="sessions-section">
+          <div class="section-header">
+            <div>
+              <h2>Study Sessions</h2>
+              <p>Log time spent studying topics in this goal.</p>
+            </div>
+          </div>
+
+          <!-- Log Session Form (Learner only) -->
+          @if (isLearner) {
+            <div class="log-session-card">
+              <h3>Log a Study Session</h3>
+
+              <form (ngSubmit)="logStudySession()" class="session-form">
+                <div class="form-group">
+                  <label for="sessionTopic">Topic *</label>
+                  <select
+                    id="sessionTopic"
+                    [(ngModel)]="newSessionTopicId"
+                    name="topicId"
+                    required
+                  >
+                    <option [ngValue]="null" disabled>Select an unlocked topic...</option>
+                    @for (t of topics; track t.id) {
+                      <option [ngValue]="t.id" [disabled]="t.locked">
+                        {{ t.locked ? '🔒 ' : '' }}{{ t.title }}{{ t.completed ? ' (Completed)' : '' }}
+                      </option>
+                    }
+                  </select>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group flex-1">
+                    <label for="sessionDate">Date *</label>
+                    <input
+                      id="sessionDate"
+                      type="date"
+                      [(ngModel)]="newSessionDate"
+                      name="date"
+                      required
+                    />
+                  </div>
+
+                  <div class="form-group flex-1">
+                    <label for="sessionMinutes">
+                      Minutes *
+                      <small>({{ config.minSessionMinutes }}–{{ config.maxSessionMinutes }})</small>
+                    </label>
+                    <input
+                      id="sessionMinutes"
+                      type="number"
+                      [(ngModel)]="newSessionMinutes"
+                      name="minutes"
+                      [min]="config.minSessionMinutes"
+                      [max]="config.maxSessionMinutes"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="sessionNote">Notes (Optional)</label>
+                  <input
+                    id="sessionNote"
+                    type="text"
+                    [(ngModel)]="newSessionNote"
+                    name="note"
+                    placeholder="e.g. Practiced dependency injection exercises"
+                    maxlength="500"
+                  />
+                </div>
+
+                @if (sessionError) {
+                  <span class="field-error">{{ sessionError }}</span>
+                }
+                @if (sessionSuccess) {
+                  <span class="field-success">{{ sessionSuccess }}</span>
+                }
+
+                <button
+                  type="submit"
+                  class="primary-btn submit-session-btn"
+                  [disabled]="isLoggingSession || !newSessionTopicId"
+                >
+                  {{ isLoggingSession ? 'Logging...' : 'Log Session' }}
+                </button>
+              </form>
+            </div>
+          }
+
+          <!-- Sessions History -->
+          <div class="session-history-card">
+            <h3>Session History ({{ sessions.length }})</h3>
+
+            @if (sessions.length === 0) {
+              <div class="empty-box">
+                <p>No study sessions logged yet for this goal.</p>
+              </div>
+            } @else {
+              <div class="sessions-list">
+                @for (s of sessions; track s.id) {
+                  <div class="session-row">
+                    <div class="session-main">
+                      <span class="session-topic-title">{{ s.topic?.title || 'Topic' }}</span>
+                      <small class="session-date">{{ formatDate(s.date) }}</small>
+                      @if (s.note) {
+                        <p class="session-note">"{{ s.note }}"</p>
+                      }
+                    </div>
+                    <div class="session-badge">
+                      {{ s.minutes }} mins
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </section>
+      </div>
+    }
+  </main>
+
+  <!-- Add Prerequisite Modal -->
+  @if (showPrereqModal && targetTopicForPrereq) {
+    <div class="modal-backdrop" (click)="closeAddPrereqModal()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Link Prerequisite</h3>
+          <button class="close-btn" (click)="closeAddPrereqModal()">✕</button>
+        </div>
+
+        <p class="modal-subtitle">
+          Select a topic that must be completed <strong>before</strong>
+          <em>"{{ targetTopicForPrereq.title }}"</em> can be completed.
+        </p>
+
+        <form (ngSubmit)="submitAddPrerequisite()">
+          <div class="form-group">
+            <label for="prereqSelect">Choose Prerequisite Topic *</label>
+            <select
+              id="prereqSelect"
+              [(ngModel)]="selectedPrereqId"
+              name="prereqId"
+              required
+            >
+              <option [ngValue]="null" disabled>Select from available topics...</option>
+              @for (cand of getEligiblePrerequisites(); track cand.id) {
+                <option [ngValue]="cand.id">
+                  {{ cand.title }} {{ cand.completed ? '(Completed)' : '' }}
+                </option>
+              }
+            </select>
+          </div>
+
+          @if (getEligiblePrerequisites().length === 0) {
+            <p class="field-hint">No eligible topics available to link as a prerequisite.</p>
+          }
+
+          @if (prereqError) {
+            <p class="modal-error">{{ prereqError }}</p>
+          }
+
+          <div class="modal-actions">
+            <button
+              type="button"
+              class="secondary-btn"
+              (click)="closeAddPrereqModal()"
+              [disabled]="isAddingPrereq"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="primary-btn"
+              [disabled]="!selectedPrereqId || isAddingPrereq"
+            >
+              {{ isAddingPrereq ? 'Linking...' : 'Link Prerequisite' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>

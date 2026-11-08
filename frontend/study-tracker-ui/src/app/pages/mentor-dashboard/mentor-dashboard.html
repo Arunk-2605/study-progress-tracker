@@ -1,0 +1,152 @@
+<div class="mentor-page">
+  <!-- Topbar Navigation -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-icon">S</div>
+      <div>
+        <h2>StudyTrack</h2>
+        <span class="role-badge">MENTOR CONSOLE</span>
+      </div>
+    </div>
+
+    <nav class="nav-links">
+      <a routerLink="/mentor" class="nav-link active">Learners & Goals</a>
+      <a routerLink="/mentor/config" class="nav-link">System Configuration</a>
+    </nav>
+
+    <div class="user-section">
+      <div class="user-info">
+        <span class="user-name">{{ currentUser?.name || 'Mentor' }}</span>
+        <span class="mentor-tag">MENTOR</span>
+      </div>
+      <button class="logout-btn" (click)="logout()">Sign out</button>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <!-- Mentor Welcome & Summary -->
+    <section class="welcome-section">
+      <div class="welcome-text">
+        <p class="eyebrow">MENTOR SUPERVISION</p>
+        <h1>{{ welcomeMessage }}</h1>
+        <p class="subtitle">
+          Monitor all learner progress, inspect prerequisite dependencies, and review study time in read-only mode.
+        </p>
+      </div>
+
+      <div class="summary-cards">
+        <div class="summary-card">
+          <span class="summary-num">{{ totalLearners }}</span>
+          <span class="summary-lbl">Active Learners</span>
+        </div>
+        <div class="summary-card">
+          <span class="summary-num">{{ totalGoals }}</span>
+          <span class="summary-lbl">Total Goals</span>
+        </div>
+        <div class="summary-card">
+          <span class="summary-num">{{ totalCompletedTopics }}</span>
+          <span class="summary-lbl">Topics Completed</span>
+        </div>
+        <div class="summary-card">
+          <span class="summary-num">{{ formatStudyTime(totalStudyMinutes) }}</span>
+          <span class="summary-lbl">Total Study Time</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Filters & Search Toolbar -->
+    <section class="toolbar-section">
+      <div class="search-box">
+        <input
+          type="text"
+          [(ngModel)]="searchQuery"
+          (input)="applyFilter()"
+          placeholder="Search by goal title, description, or learner name/email..."
+        />
+      </div>
+
+      <div class="filter-group">
+        <label for="learnerFilter">Filter Learner:</label>
+        <select
+          id="learnerFilter"
+          [(ngModel)]="selectedLearnerId"
+          (change)="applyFilter()"
+        >
+          <option value="all">All Learners ({{ totalLearners }})</option>
+          @for (l of getDistinctLearners(); track l.id) {
+            <option [value]="l.id">{{ l.name }} ({{ l.email }})</option>
+          }
+        </select>
+      </div>
+
+      <button class="refresh-btn" (click)="loadMentorOverview()" [disabled]="isLoading">
+        🔄 Refresh
+      </button>
+    </section>
+
+    <!-- Goals Content Area -->
+    @if (isLoading) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Loading learner goals and progress metrics...</p>
+      </div>
+    } @else if (errorMessage) {
+      <div class="error-banner">
+        <p>{{ errorMessage }}</p>
+        <button class="retry-btn" (click)="loadMentorOverview()">Retry</button>
+      </div>
+    } @else if (filteredGoals.length === 0) {
+      <div class="empty-state">
+        <p>No goals match the current search or learner filter.</p>
+      </div>
+    } @else {
+      <div class="goals-grid">
+        @for (goal of filteredGoals; track goal.id) {
+          <div class="mentor-goal-card">
+            <div class="learner-header">
+              <div class="learner-avatar">
+                {{ (goal.user?.name || 'L').charAt(0).toUpperCase() }}
+              </div>
+              <div class="learner-details">
+                <span class="learner-name">{{ goal.user?.name || 'Learner #' + goal.userId }}</span>
+                <span class="learner-email">{{ goal.user?.email || 'N/A' }}</span>
+              </div>
+            </div>
+
+            <div class="goal-body">
+              <h3 class="goal-title">{{ goal.title }}</h3>
+              <p class="goal-desc">{{ goal.description || 'No description provided.' }}</p>
+
+              @if (goal.progress) {
+                <div class="progress-block">
+                  <div class="progress-labels">
+                    <span>Progress: <strong>{{ goal.progress.progressPercentage }}%</strong></span>
+                    <span>{{ goal.progress.completedTopics }} / {{ goal.progress.totalTopics }} topics</span>
+                  </div>
+
+                  <div class="progress-bar-track">
+                    <div
+                      class="progress-bar-fill"
+                      [style.width.%]="goal.progress.progressPercentage"
+                    ></div>
+                  </div>
+
+                  <div class="study-time-footer">
+                    <span>⏱️ Total Study: <strong>{{ formatStudyTime(goal.progress.totalStudyMinutes) }}</strong></span>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <div class="goal-actions">
+              <button class="inspect-btn" (click)="viewGoalDetails(goal.id)">
+                Inspect Topics & Sessions →
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </main>
+</div>
+
